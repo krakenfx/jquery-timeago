@@ -119,12 +119,33 @@
 
   $.fn.timeago = function() {
     var self = this;
-    self.each(refresh);
+    var refreshMillis = $t.settings.refreshMillis;
 
-    var $s = $t.settings;
-    if ($s.refreshMillis > 0) {
-      setInterval(function() { self.each(refresh); }, $s.refreshMillis);
-    }
+    self.each(function() {
+      var element = this;
+      var $element = $(element);
+      var existingTimer = $element.data("timeago-timer");
+      if (existingTimer) {
+        clearInterval(existingTimer);
+      }
+
+      refresh.call(element);
+      if (refreshMillis <= 0) {
+        $element.removeData("timeago-timer");
+        return;
+      }
+
+      var timer = setInterval(function() {
+        if (!isAttached(element)) {
+          clearInterval(timer);
+          $element.removeData("timeago-timer");
+          return;
+        }
+        refresh.call(element);
+      }, refreshMillis);
+      $element.data("timeago-timer", timer);
+    });
+
     return self;
   };
 
